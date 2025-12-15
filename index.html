@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Bottom Menu Layout</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700&display=swap');
+
+        /* 1. 기본 설정 */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        :root {
+            --stroke-width: 3px; 
+            --border-color: #000;
+        }
+
+        html, body {
+            width: 100%; height: 100%;
+            overflow: hidden; 
+            background-color: #fff;
+            font-family: 'Noto Serif KR', serif;
+            display: flex; user-select: none; overscroll-behavior: none; 
+        }
+
+        /* --- [왼쪽 패널] --- */
+        .left-panel {
+            flex: 4; height: 100%;
+            display: flex; flex-direction: row; 
+            border-right: var(--stroke-width) solid var(--border-color);
+            background-color: #fff; z-index: 10;
+        }
+
+        .side-pillar {
+            flex: 0 0 40px; height: 100%; background-color: #fff; z-index: 5;
+        }
+        .side-pillar.left { border-right: var(--stroke-width) solid var(--border-color); }
+        .side-pillar.right { border-left: var(--stroke-width) solid var(--border-color); }
+
+        .center-column {
+            flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden;
+        }
+
+        /* [2-2] 메인 화면 (이제 맨 위로 이동) */
+        .screen-area {
+            flex: 1; min-height: 0; 
+            display: flex; justify-content: center; align-items: center;
+            position: relative; overflow: hidden;
+            /* 하단 테두리는 아래 메뉴박스의 상단 테두리가 담당 */
+        }
+
+        /* [2-1] 한자 메뉴바 (중간으로 이동) */
+        .top-menu {
+            flex: 0 0 70px; display: flex;
+            /* 위아래 테두리를 줘서 화면과 자막을 분리 */
+            border-top: var(--stroke-width) solid var(--border-color);
+            border-bottom: var(--stroke-width) solid var(--border-color);
+            background: #fff; z-index: 20;
+        }
+
+        .menu-item {
+            flex: 1; min-width: 0;
+            display: flex; justify-content: center; align-items: center;
+            border-right: var(--stroke-width) solid var(--border-color);
+            cursor: pointer; position: relative; overflow: hidden;
+            font-size: min(36px, 2.5vw); font-weight: 700; line-height: 1;
+            transition: background 0.3s, color 0.3s;
+        }
+        .menu-item:last-child { border-right: none; }
+        .menu-item.active { background-color: #000; color: #fff; }
+
+        @keyframes blink-flash {
+            0%, 50%, 100% { background-color: #000; color: #fff; }
+            25%, 75% { background-color: #fff; color: #000; }
+        }
+        .menu-item.blinking { animation: blink-flash 0.4s step-end forwards; }
+
+        .ticker-container { width: 100%; height: 100%; position: relative; overflow: hidden; }
+        .ticker-wrapper {
+            position: absolute; top: 0; left: 0; width: 100%; height: 200%;
+            display: flex; flex-direction: column;
+            transform: translateY(-50%); 
+            transition: transform 0.5s cubic-bezier(0.5, 0, 0.2, 1);
+        }
+        .ticker-char { flex: 1; display: flex; justify-content: center; align-items: center; width: 100%; font-size: inherit; font-weight: inherit; }
+        .ticker-wrapper.switched { transform: translateY(0); }
+
+
+        /* [2-3] 하단 자막바 (맨 아래) */
+        .bottom-bar {
+            flex: 0 0 80px; 
+            /* border-top 제거 (메뉴바의 border-bottom이 있기 때문) */
+            background: #fff;
+            display: flex; justify-content: center; align-items: center;
+            font-weight: 700;
+            font-size: clamp(22px, 3.0vh, 32px);
+            padding: 0 20px;
+            text-align: center; white-space: pre-wrap;
+        }
+
+
+        /* SVG 스타일 (기존 유지) */
+        .obj-svg {
+            max-width: 65%; max-height: 65%; 
+            width: 400px; height: 400px;
+            display: none; opacity: 0; transition: opacity 0.5s ease;
+            overflow: visible; 
+        }
+        .obj-svg.visible { display: block; opacity: 1; }
+        
+        .obj-svg path, .obj-svg line, .obj-svg circle, .obj-svg rect, .obj-svg polyline, .obj-svg ellipse {
+            fill: none; 
+            stroke: #000; 
+            stroke-width: 1.5; 
+            stroke-linecap: round; stroke-linejoin: round;
+            vector-effect: non-scaling-stroke;
+        }
+
+        /* 애니메이션 스타일 (기존 유지) */
+        #svg-qin .eye-lid { transition: d 0.5s; }
+        #svg-qin .pupil { fill: #000; stroke: none; transition: transform 0.5s, opacity 0.5s; transform-origin: center; }
+        #svg-qin.broken .pupil { transform: scale(0); opacity: 0; }
+        #svg-qin.broken .eye-lid { d: path("M10 50 Q50 80 90 50"); }
+        
+        #svg-dao .path-dashed { stroke-dasharray: 5, 5; transition: opacity 0.5s; }
+        #svg-dao.broken .path-dashed { opacity: 0; }
+        
+        #svg-chang .gear { transform-origin: center; animation: spin 4s linear infinite; transition: opacity 0.5s; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        #svg-chang.broken .gear { opacity: 0; animation: none; }
+        
+        #svg-fei .feather { opacity: 0; transition: all 0.8s ease-out; transform-origin: center; }
+        #svg-fei.broken .wing-body { transform: rotate(20deg) translateY(20px); opacity: 0.5; transition: all 0.6s; }
+        #svg-fei.broken .feather { opacity: 1; transform: translate(var(--tx), var(--ty)) rotate(var(--r)); }
+        #svg-fei .wing { transform-origin: 50% 80%; transition: transform 0.8s cubic-bezier(0.6, -0.28, 0.735, 0.045), opacity 0.8s; }
+        #svg-fei.broken .wing-left { transform: rotate(-15deg) translateY(10px); opacity: 0.7; }
+        #svg-fei.broken .wing-right { transform: rotate(60deg) translate(30px, 100px); opacity: 0; }
+        
+        #svg-ting .sound-lines path { transition: all 0.6s ease-out; opacity: 1; }
+        #svg-ting.broken .sound-lines path { transform: translateX(30px) scale(0.5); opacity: 0; }
+        
+        #svg-yun .wheel { transform-origin: center; transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        #svg-yun .cart-body { transition: transform 0.6s ease-in; }
+        #svg-yun .cargo-box { fill: #000; stroke: none; transition: transform 0.5s ease; }
+        #svg-yun.broken .wheel.left { transform: translateX(-50px) rotate(-180deg); opacity: 0; }
+        #svg-yun.broken .wheel.right { transform: translateX(50px) rotate(180deg); opacity: 0; }
+        #svg-yun.broken .cart-body { transform: translateY(20px) rotate(-5deg); }
+        #svg-yun.broken .cargo-box { transform: translateY(25px) rotate(10deg); }
+        
+        #svg-xuan .check-v { stroke-width: 3px; stroke: #000; transition: all 0.4s; transform-origin: center; }
+        #svg-xuan.broken .check-v { opacity: 0; transform: scale(2); }
+        
+        #svg-jin .arrow-head-piece { fill: #000; stroke: none; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #svg-jin.broken .arrow-head-piece { transform: translateX(60px) rotate(45deg); opacity: 0; }
+        #svg-jin.broken .arrow-shaft { stroke-dasharray: 2, 2; opacity: 0.5; }
+        
+        #svg-er .skull-top { transition: transform 0.6s, opacity 0.6s; transform-origin: bottom center; }
+        #svg-er .face-sad { opacity: 0; transition: opacity 0.5s; }
+        #svg-er.broken .skull-top { transform: translateY(-30px) rotate(-15deg); opacity: 0; }
+        #svg-er.broken .face-sad { opacity: 1; }
+        
+        #svg-ai .heart-piece { fill: #000; stroke: none; transition: transform 0.6s cubic-bezier(0.1, 1.2, 0.3, 1); }
+        #svg-ai.broken .left-half { transform: translate(-20px, 10px) rotate(-15deg); }
+        #svg-ai.broken .right-half { transform: translate(20px, 10px) rotate(15deg); }
+        
+        #svg-yun2 .rain-drops line { stroke: #000; stroke-width: 1; transition: transform 0.6s ease-in, opacity 0.4s; }
+        #svg-yun2 .drought-cracks { opacity: 0; transform-origin: bottom center; transform: scaleY(0); transition: opacity 0.5s, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        #svg-yun2.broken .rain-drops line { transform: translateY(30px); opacity: 0; }
+        #svg-yun2.broken .drought-cracks { opacity: 1; transform: scaleY(1); }
+
+
+        /* --- [오른쪽 패널] --- */
+        .right-panel {
+            flex: 1.2; height: 100%;
+            background-color: #000; 
+            position: relative; overflow: hidden;
+            border-left: var(--stroke-width) solid var(--border-color);
+        }
+        
+        #physics-svg {
+            display: block; width: 100%; height: 100%; cursor: default;
+        }
+
+        .rope-line { fill: none; stroke: #fff; stroke-width: 3px; stroke-linecap: round; }
+        .handle-circle { fill: #000; stroke: #fff; stroke-width: 3px; }
+        .handle-text {
+            fill: #fff; font-family: 'Noto Serif KR', serif;
+            font-weight: 700; font-size: 36px;
+            text-anchor: middle; dominant-baseline: middle; user-select: none;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="left-panel">
+        <div class="side-pillar left"></div>
+
+        <div class="center-column">
+            
+            <!-- [1] 화면 영역 (맨 위) -->
+            <div class="screen-area">
+                <svg id="svg-qin" class="obj-svg" viewBox="0 0 100 100"><path class="eye-lid" d="M10 50 Q50 10 90 50 Q50 90 10 50 Z" /><circle cx="50" cy="50" r="18" /><circle class="pupil" cx="50" cy="50" r="8" /></svg>
+                <svg id="svg-dao" class="obj-svg" viewBox="0 0 100 100"><path d="M20 90 Q40 50 45 20" /><path d="M80 90 Q60 50 55 20" /><path class="path-dashed" d="M50 90 Q50 50 50 20" /><circle class="destination" cx="50" cy="15" r="5" fill="#000"/></svg>
+                <svg id="svg-chang" class="obj-svg" viewBox="0 0 100 100"><path class="factory-roof" d="M10 70 L10 40 L30 30 L30 40 L50 30 L50 40 L70 30 L70 70 Z" /><g class="gear" style="transform-box: fill-box;"><circle cx="40" cy="55" r="8" /><path d="M40 45 L40 65 M30 55 L50 55 M33 48 L47 62 M47 48 L33 62" /></g></svg>
+                
+                <svg id="svg-fei" class="obj-svg" viewBox="0 0 100 100">
+                    <path class="wing wing-left" d="M50 85 Q 45 80, 40 70 Q 20 60, 5 30 Q 10 20, 25 15 Q 40 10, 50 20 Q 45 30, 40 40 Q 30 40, 20 30 Q 25 45, 35 50 Q 30 60, 25 55 Q 35 70, 45 65 Q 48 75, 50 85 Z" />
+                    <path class="wing wing-right" d="M50 85 Q 55 80, 60 70 Q 80 60, 95 30 Q 90 20, 75 15 Q 60 10, 50 20 Q 55 30, 60 40 Q 70 40, 80 30 Q 75 45, 65 50 Q 70 60, 75 55 Q 65 70, 55 65 Q 52 75, 50 85 Z" />
+                </svg>
+
+                <svg id="svg-ting" class="obj-svg" viewBox="0 0 100 100"><path d="M30 30 C 10 30, 10 80, 30 80 C 40 80, 45 70, 35 60" /><path d="M28 45 Q 35 50 28 65" /><g class="sound-lines"><path d="M50 55 Q60 55 50 65" /><path d="M60 45 Q80 55 60 75" /><path d="M70 35 Q100 55 70 85" /></g></svg>
+                <svg id="svg-yun" class="obj-svg" viewBox="0 0 100 100"><g class="cart-body"><path d="M20 70 L80 70 L80 60 L20 60 Z" /><path d="M25 60 L25 50" /></g><circle class="wheel left" cx="35" cy="75" r="8" /><circle class="wheel right" cx="65" cy="75" r="8" /><rect class="cargo-box" x="35" y="35" width="30" height="25" /></svg>
+                <svg id="svg-xuan" class="obj-svg" viewBox="0 0 100 100"><g class="clipboard"><rect x="25" y="20" width="50" height="60" rx="3" /><line x1="35" y1="35" x2="65" y2="35" /><line x1="35" y1="45" x2="65" y2="45" /><line x1="35" y1="55" x2="65" y2="55" /></g><polyline class="check-v" points="30 40 45 60 75 20" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <svg id="svg-jin" class="obj-svg" viewBox="0 0 100 100"><line class="arrow-shaft" x1="10" y1="50" x2="70" y2="50" /><path class="arrow-head-piece" d="M65 35 L85 50 L65 65 L70 50 Z" /><path d="M10 50 L5 40 M10 50 L5 60" /></svg>
+                <svg id="svg-er" class="obj-svg" viewBox="0 0 100 100"><g class="body"><path d="M30 90 Q50 70 70 90" /><circle cx="50" cy="55" r="20" /></g><g class="face-sad"><circle cx="43" cy="50" r="2" fill="#000" stroke="none"/><circle cx="57" cy="50" r="2" fill="#000" stroke="none"/><path d="M45 60 Q50 58 55 60" /></g><path class="skull-top" d="M30 50 A 20 20 0 0 1 70 50" /></svg>
+                <svg id="svg-ai" class="obj-svg" viewBox="0 0 100 100"><g class="heart-piece left-half"><path d="M50 85 C 20 65 10 45 10 30 C 10 15 25 10 40 20 C 45 25 50 35 50 35 Z" fill="#000" stroke="none"/></g><g class="heart-piece right-half"><path d="M50 85 C 80 65 90 45 90 30 C 90 15 75 10 60 20 C 55 25 50 35 50 35 Z" fill="#000" stroke="none"/></g></svg>
+                <svg id="svg-yun2" class="obj-svg" viewBox="0 0 100 100"><path class="cloud-shape" d="M25 45 Q15 45 15 35 Q15 25 25 25 Q30 15 45 15 Q60 15 65 25 Q75 25 75 35 Q75 45 65 45 Z" /><g class="rain-drops"><line x1="25" y1="50" x2="20" y2="60" /><line x1="35" y1="55" x2="30" y2="65" /><line x1="45" y1="50" x2="40" y2="60" /><line x1="55" y1="55" x2="50" y2="65" /><line x1="65" y1="50" x2="60" y2="60" /><line x1="75" y1="55" x2="70" y2="65" /></g><line class="ground-flat" x1="10" y1="85" x2="90" y2="85" /><g class="drought-cracks"><path d="M10 85 L20 95 L30 85 L40 92 L50 85 L60 95 L70 85 L80 92 L90 85" fill="none" stroke="#000" stroke-width="1.5" /></g></svg>
+            </div>
+
+            <!-- [2] 메뉴바 (화면 아래, 자막 위) -->
+            <div class="top-menu" id="menu-container">
+                <div class="menu-item" data-target="svg-qin" data-missing="見" data-msg="볼 견(見)이 없는데, 어찌 서로 친(親)할 수 있는가?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">亲</div><div class="ticker-char old">親</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-dao" data-missing="道" data-msg="길(道)이 없는데, 어찌 인도(導)할 수 있는가?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">导</div><div class="ticker-char old">導</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-chang" data-missing="敞" data-msg="안이 비었는데, 어찌 공장(廠)이라 할 수 있는가?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">厂</div><div class="ticker-char old">廠</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-fei" data-missing="翼" data-msg="날개가 한쪽(飞)만 있는데 하늘은 어떻게 나는가?(飛)">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">飞</div><div class="ticker-char old">飛</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-ting" data-missing="耳" data-msg="귀(耳)가 없는데, 어찌 들을(聽) 수 있는가?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">听</div><div class="ticker-char old">聽</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-yun" data-missing="車" data-msg="수레(車)가 없으면(运) 어떻게 옮기나?(運)">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">运</div><div class="ticker-char old">運</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-xuan" data-missing="巽" data-msg="신중함(巽)이 없는데, 어찌 고를(選) 수 있는가?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">选</div><div class="ticker-char old">選</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-jin" data-missing="隹" data-msg="나아감(隹)이 없는데, 어찌 전진(進)할 수 있는가?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">进</div><div class="ticker-char old">進</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-er" data-missing="臼" data-msg="머리(臼)가 없는데, 어찌 아이(兒)라 할 수 있는가?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">儿</div><div class="ticker-char old">兒</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-ai" data-missing="心" data-msg="마음(心)이 없는데, 사랑(愛)을 할 수 있는가?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">爱</div><div class="ticker-char old">愛</div></div></div>
+                </div>
+                <div class="menu-item" data-target="svg-yun2" data-missing="雨" data-msg="구름(雲)이 비(雨)를 내리지 않으면(云), 농사는 어떻게 짓나?">
+                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">云</div><div class="ticker-char old">雲</div></div></div>
+                </div>
+            </div>
+
+            <!-- [3] 하단 자막바 (맨 아래) -->
+            <div class="bottom-bar" id="text-display"></div>
+        </div>
+
+        <div class="side-pillar right"></div>
+    </div>
+
+    <div class="right-panel">
+        <svg id="physics-svg" preserveAspectRatio="none"></svg>
+    </div>
+
+    <script>
+        const menuItems = document.querySelectorAll('.menu-item');
+        const textDisplay = document.getElementById('text-display');
+        const svgCanvas = document.getElementById('physics-svg');
+
+        let activeItem = null;
+        let isBroken = false;
+        let width, height;
+        let mouse = { x: 0, y: 0, isDown: false };
+        let stringObj = null; 
+        
+        const GRAVITY = 0.8;
+        const AIR_RESISTANCE = 0.99; 
+        const DAMPING = 0.92;
+        const SPRING_STRENGTH = 0.08;
+        const SPRING_DAMPING = 0.90;
+        
+        function resize() {
+            const rect = svgCanvas.parentElement.getBoundingClientRect();
+            width = rect.width;
+            height = rect.height;
+            svgCanvas.setAttribute('viewBox', `0 0 ${width} ${height}`);
+        }
+        window.addEventListener('resize', resize);
+        setTimeout(resize, 100);
+
+        function getSvgPos(e) {
+            const rect = svgCanvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        svgCanvas.addEventListener('mousedown', e => {
+            const pos = getSvgPos(e);
+            mouse.x = pos.x; mouse.y = pos.y; mouse.isDown = true;
+            if (stringObj) stringObj.checkDragStart();
+        });
+        window.addEventListener('mousemove', e => {
+            const rect = svgCanvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left; mouse.y = e.clientY - rect.top;
+        });
+        window.addEventListener('mouseup', () => {
+            mouse.isDown = false;
+            if (stringObj) stringObj.release();
+        });
+
+        svgCanvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const pos = getSvgPos(e);
+            mouse.x = pos.x; mouse.y = pos.y; mouse.isDown = true;
+            if (stringObj) stringObj.checkDragStart();
+        });
+        window.addEventListener('touchmove', e => {
+            const pos = getSvgPos(e);
+            mouse.x = pos.x; mouse.y = pos.y;
+        });
+        window.addEventListener('touchend', () => {
+            mouse.isDown = false;
+            if (stringObj) stringObj.release();
+        });
+
+        class StringObj {
+            constructor(text) {
+                this.anchorX = width / 2; 
+                this.anchorY = 0; 
+                this.targetLength = 120; 
+                this.currentLength = -150;
+                this.velocityY = 0;        
+                this.circleX = this.anchorX;
+                this.circleY = -150;
+                this.radius = 36; 
+                this.text = text; 
+                this.state = 'dropping'; 
+                this.swingAngle = 0;
+                this.swingVelocity = 0;
+                this.brokenLineLength = 80;
+                this.fallObj = null; 
+                this.createSvgElements();
+            }
+
+            createSvgElements() {
+                this.ropePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                this.ropePath.setAttribute("class", "rope-line");
+                svgCanvas.appendChild(this.ropePath);
+
+                this.handleGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                svgCanvas.appendChild(this.handleGroup);
+
+                this.handleCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                this.handleCircle.setAttribute("r", this.radius);
+                this.handleCircle.setAttribute("class", "handle-circle");
+                this.handleGroup.appendChild(this.handleCircle);
+
+                this.handleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                this.handleText.setAttribute("class", "handle-text");
+                this.handleText.textContent = this.text;
+                this.handleText.setAttribute("dy", "2"); 
+                this.handleGroup.appendChild(this.handleText);
+
+                this.stubLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                this.stubLine.setAttribute("class", "rope-line");
+                this.stubLine.setAttribute("x1", 0); this.stubLine.setAttribute("y1", 0);
+                this.stubLine.setAttribute("x2", 0); this.stubLine.setAttribute("y2", 0);
+                this.handleGroup.insertBefore(this.stubLine, this.handleCircle); 
+            }
+
+            remove() {
+                if(this.ropePath) this.ropePath.remove();
+                if(this.handleGroup) this.handleGroup.remove();
+            }
+
+            update() {
+                if (this.state === 'dropping') {
+                    const force = (this.targetLength - this.currentLength) * SPRING_STRENGTH;
+                    this.velocityY += force;
+                    this.velocityY *= SPRING_DAMPING;
+                    this.currentLength += this.velocityY;
+                    this.circleX = this.anchorX; 
+                    this.circleY = this.anchorY + this.currentLength;
+
+                    if (Math.abs(this.velocityY) < 0.1 && Math.abs(this.targetLength - this.currentLength) < 1) {
+                        this.state = 'idle';
+                        this.currentLength = this.targetLength;
+                    }
+                }
+                else if (this.state === 'dragging') {
+                    const targetX = mouse.x;
+                    const targetY = mouse.y;
+                    this.circleX += (targetX - this.circleX) * 0.4;
+                    this.circleY = targetY; 
+                    const distY = this.circleY - this.anchorY;
+                    if (distY > 350) this.break();
+                }
+                else if (this.state === 'idle') {
+                    this.anchorX = width / 2; 
+                    const targetY = this.anchorY + this.targetLength;
+                    this.circleY += (targetY - this.circleY) * 0.1;
+                    this.circleX += (this.anchorX - this.circleX) * 0.1;
+                }
+                else if (this.state === 'broken') {
+                    const angularAccel = -0.015 * Math.sin(this.swingAngle);
+                    this.swingVelocity += angularAccel;
+                    this.swingVelocity *= DAMPING;
+                    this.swingAngle += this.swingVelocity;
+                    if (this.fallObj) {
+                        this.fallObj.vy += GRAVITY;
+                        this.fallObj.vx *= AIR_RESISTANCE;
+                        this.fallObj.x += this.fallObj.vx;
+                        this.fallObj.y += this.fallObj.vy;
+                        this.fallObj.rotation += this.fallObj.vr;
+                    }
+                }
+                this.drawSvg();
+            }
+
+            drawSvg() {
+                if (this.state === 'broken') {
+                    const endX = this.anchorX + Math.sin(this.swingAngle) * this.brokenLineLength;
+                    const endY = this.anchorY + Math.cos(this.swingAngle) * this.brokenLineLength;
+                    this.ropePath.setAttribute("d", `M${this.anchorX},${this.anchorY} L${endX},${endY}`);
+
+                    if (this.fallObj) {
+                        const deg = this.fallObj.rotation * (180 / Math.PI);
+                        this.handleGroup.setAttribute("transform", 
+                            `translate(${this.fallObj.x}, ${this.fallObj.y}) rotate(${deg})`);
+                        this.stubLine.setAttribute("y2", -this.fallObj.stubLen);
+                    }
+                } else {
+                    this.ropePath.setAttribute("d", `M${this.anchorX},${this.anchorY} L${this.circleX},${this.circleY}`);
+                    this.handleGroup.setAttribute("transform", `translate(${this.circleX}, ${this.circleY})`);
+                    this.stubLine.setAttribute("y2", 0);
+                }
+            }
+
+            checkDragStart() {
+                if (this.state === 'broken' || this.state === 'dropping') return;
+                const dx = mouse.x - this.circleX;
+                const dy = mouse.y - this.circleY;
+                if (Math.sqrt(dx*dx + dy*dy) < this.radius + 10) {
+                    this.state = 'dragging';
+                }
+            }
+
+            release() {
+                if (this.state === 'dragging') {
+                    this.state = 'idle';
+                }
+            }
+
+            break() {
+                this.state = 'broken';
+                isBroken = true;
+                const dx = this.circleX - this.anchorX;
+                const dy = this.circleY - this.anchorY;
+                this.swingAngle = Math.atan2(dx, dy);
+                this.swingVelocity = -dx * 0.01; 
+                this.fallObj = {
+                    x: this.circleX, y: this.circleY,
+                    vx: (this.circleX - this.anchorX) * 0.1, 
+                    vy: (this.circleY - this.anchorY) * 0.1, 
+                    vr: (Math.random() - 0.5) * 0.2, 
+                    stubLen: 20, rotation: this.swingAngle
+                };
+                triggerPageAction();
+            }
+        }
+
+        function activateSystem(item) {
+            if (stringObj) stringObj.remove();
+            activeItem = item;
+            isBroken = false;
+            item.classList.add('active');
+            
+            const targetId = item.getAttribute('data-target');
+            const targetSvg = document.getElementById(targetId);
+            if(targetSvg) {
+                targetSvg.classList.add('visible');
+                targetSvg.classList.remove('broken');
+                targetSvg.style.opacity = '1';
+            }
+            resize(); 
+            const missingText = item.getAttribute('data-missing');
+            stringObj = new StringObj(missingText);
+            textDisplay.innerHTML = "";
+        }
+
+        function deactivateSystem() {
+            if (activeItem) {
+                const targetId = activeItem.getAttribute('data-target');
+                const targetSvg = document.getElementById(targetId);
+                if(targetSvg) {
+                    targetSvg.classList.remove('visible');
+                    targetSvg.classList.remove('broken');
+                }
+                activeItem.classList.remove('active');
+                activeItem.classList.remove('blinking');
+                const ticker = activeItem.querySelector('.ticker-wrapper');
+                ticker.classList.remove('switched');
+            }
+            activeItem = null;
+            isBroken = false;
+            if (stringObj) {
+                stringObj.remove();
+                stringObj = null;
+            }
+            textDisplay.innerHTML = "";
+        }
+
+        function triggerPageAction() {
+            if (!activeItem) return;
+            const targetId = activeItem.getAttribute('data-target');
+            const targetSvg = document.getElementById(targetId);
+            if(targetSvg) targetSvg.classList.add('broken');
+            
+            activeItem.classList.add('blinking');
+            
+            setTimeout(() => {
+                const ticker = activeItem.querySelector('.ticker-wrapper');
+                ticker.classList.add('switched');
+                setTimeout(() => activeItem.classList.remove('blinking'), 100);
+                const msg = activeItem.getAttribute('data-msg');
+                typeWriter(msg);
+            }, 400);
+        }
+
+        function typeWriter(text) {
+            textDisplay.innerHTML = "";
+            let i = 0;
+            function type() {
+                if (i < text.length) {
+                    textDisplay.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, 60);
+                }
+            }
+            type();
+        }
+
+        menuItems.forEach((item) => {
+            item.addEventListener('click', () => {
+                if (activeItem) deactivateSystem();
+                if (activeItem !== item) activateSystem(item);
+            });
+        });
+
+        function animate() {
+            if (stringObj) stringObj.update();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+    </script>
+</body>
+</html>
