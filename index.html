@@ -41,18 +41,16 @@
             flex: 1; display: flex; flex-direction: column; height: 100%; overflow: hidden;
         }
 
-        /* [2-2] 메인 화면 (이제 맨 위로 이동) */
+        /* [2-1] 메인 화면 */
         .screen-area {
             flex: 1; min-height: 0; 
             display: flex; justify-content: center; align-items: center;
             position: relative; overflow: hidden;
-            /* 하단 테두리는 아래 메뉴박스의 상단 테두리가 담당 */
         }
 
-        /* [2-1] 한자 메뉴바 (중간으로 이동) */
+        /* [2-2] 한자 메뉴바 */
         .top-menu {
             flex: 0 0 70px; display: flex;
-            /* 위아래 테두리를 줘서 화면과 자막을 분리 */
             border-top: var(--stroke-width) solid var(--border-color);
             border-bottom: var(--stroke-width) solid var(--border-color);
             background: #fff; z-index: 20;
@@ -86,10 +84,9 @@
         .ticker-wrapper.switched { transform: translateY(0); }
 
 
-        /* [2-3] 하단 자막바 (맨 아래) */
+        /* [2-3] 하단 자막바 */
         .bottom-bar {
             flex: 0 0 80px; 
-            /* border-top 제거 (메뉴바의 border-bottom이 있기 때문) */
             background: #fff;
             display: flex; justify-content: center; align-items: center;
             font-weight: 700;
@@ -99,7 +96,7 @@
         }
 
 
-        /* SVG 스타일 (기존 유지) */
+        /* SVG 스타일 공통 */
         .obj-svg {
             max-width: 65%; max-height: 65%; 
             width: 400px; height: 400px;
@@ -116,58 +113,188 @@
             vector-effect: non-scaling-stroke;
         }
 
-        /* 애니메이션 스타일 (기존 유지) */
-        #svg-qin .eye-lid { transition: d 0.5s; }
-        #svg-qin .pupil { fill: #000; stroke: none; transition: transform 0.5s, opacity 0.5s; transform-origin: center; }
-        #svg-qin.broken .pupil { transform: scale(0); opacity: 0; }
-        #svg-qin.broken .eye-lid { d: path("M10 50 Q50 80 90 50"); }
+        /* --- 개별 애니메이션 스타일 --- */
+
+        /* 1. 볼 견(見) */
+        @keyframes hand-wave {
+            0% { transform: rotate(-15deg); }
+            100% { transform: rotate(15deg); }
+        }
+        #svg-qin .pupil-hand {
+            transform-origin: 50px 60px;
+            animation: hand-wave 0.5s infinite alternate ease-in-out;
+            transition: transform 0.5s, opacity 0.5s;
+            opacity: 1;
+        }
+        #svg-qin.broken .pupil-hand {
+            animation: none; transform: scale(0); opacity: 0;
+        }
+        #svg-qin .eye-lid {
+            fill: none; stroke: #000; stroke-width: 3px;
+            transition: d 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #svg-qin.broken .eye-lid {
+            d: path("M10 50 Q50 50 90 50 Q50 50 10 50 Z");
+        }
         
-        #svg-dao .path-dashed { stroke-dasharray: 5, 5; transition: opacity 0.5s; }
-        #svg-dao.broken .path-dashed { opacity: 0; }
-        
-        #svg-chang .gear { transform-origin: center; animation: spin 4s linear infinite; transition: opacity 0.5s; }
+        /* 2. 길 도(道) */
+        #svg-dao path, #svg-dao circle {
+            stroke: #000; stroke-width: 3px; stroke-linecap: round; fill: none;
+            transition: all 0.5s ease;
+        }
+        #svg-dao .destination {
+            fill: #000; stroke: none; transition: transform 0.5s, opacity 0.5s;
+        }
+        #svg-dao .path-dashed {
+            stroke-dasharray: 0, 8; stroke-linecap: round;
+            clip-path: inset(0 0 0 0); 
+            transition: clip-path 1.5s ease-in-out; 
+        }
+        @keyframes try-move {
+            0% { transform: translateY(0); }
+            30% { transform: translateY(20px); }
+            50% { transform: translateY(15px); }
+            100% { transform: translateY(10px) scale(0.8);}
+        }
+        #svg-dao.broken .path-dashed { clip-path: inset(100% 0 0 0); }
+        #svg-dao.broken .destination { animation: try-move 2s forwards; }
+
+        /* 3. 공장(廠) */
+        #svg-chang path, #svg-chang circle, #svg-chang line { stroke-width: 3px; }
+        #svg-chang .gear { 
+            transform-origin: center; animation: spin 4s linear infinite; transition: opacity 0.5s; 
+        }
         @keyframes spin { 100% { transform: rotate(360deg); } }
         #svg-chang.broken .gear { opacity: 0; animation: none; }
         
-        #svg-fei .feather { opacity: 0; transition: all 0.8s ease-out; transform-origin: center; }
-        #svg-fei.broken .wing-body { transform: rotate(20deg) translateY(20px); opacity: 0.5; transition: all 0.6s; }
-        #svg-fei.broken .feather { opacity: 1; transform: translate(var(--tx), var(--ty)) rotate(var(--r)); }
-        #svg-fei .wing { transform-origin: 50% 80%; transition: transform 0.8s cubic-bezier(0.6, -0.28, 0.735, 0.045), opacity 0.8s; }
-        #svg-fei.broken .wing-left { transform: rotate(-15deg) translateY(10px); opacity: 0.7; }
-        #svg-fei.broken .wing-right { transform: rotate(60deg) translate(30px, 100px); opacity: 0; }
+        /* 4. 날 비(飛) */
+        #svg-fei .wing {
+            stroke: #000; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; fill: none;
+            transform-origin: 50px 85px; 
+        }
+        @keyframes wing-flap-left { 0% { transform: rotate(0deg); } 100% { transform: rotate(-15deg); } }
+        @keyframes wing-flap-right { 0% { transform: rotate(0deg); } 100% { transform: rotate(15deg); } }
+        @keyframes wing-fall-gravity {
+            0% { transform: rotate(0deg) translate(0, 0); opacity: 1; animation-timing-function: cubic-bezier(0.5, 0, 1, 1); }
+            20% { transform: rotate(15deg) translate(5px, -5px); opacity: 1; }
+            100% { transform: rotate(120deg) translate(80px, 200px); opacity: 0; }
+        }
+        @keyframes wing-sag-left {
+            0% { transform: rotate(0deg); }
+            60% { transform: rotate(-35deg) translateY(10px); }
+            80% { transform: rotate(-30deg) translateY(8px); }
+            100% { transform: rotate(-35deg) translateY(10px); opacity: 0.6; }
+        }
+        #svg-fei .wing-left { animation: wing-flap-left 1.2s ease-in-out infinite alternate; }
+        #svg-fei .wing-right { animation: wing-flap-right 1.2s ease-in-out infinite alternate; }
+        #svg-fei.broken .wing-left { animation: wing-sag-left 2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        #svg-fei.broken .wing-right { animation: wing-fall-gravity 1.5s forwards; }
         
-        #svg-ting .sound-lines path { transition: all 0.6s ease-out; opacity: 1; }
-        #svg-ting.broken .sound-lines path { transform: translateX(30px) scale(0.5); opacity: 0; }
+        /* 5. 들을 청(聽) */
+        #svg-ting .ear-part {
+            fill: none; stroke: #000; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round;
+            transition: opacity 0.3s ease;
+        }
+        #svg-ting .sound-signal {
+            fill: none; stroke: #000; stroke-width: 3px; stroke-linecap: round;
+            stroke-dasharray: 20 1500; stroke-dashoffset: 20; 
+        }
+        @keyframes signal-poke-v2 {
+            0% { stroke-dashoffset: 20; opacity: 0; }
+            10% { opacity: 1; }
+            35% { stroke-dashoffset: -110; } 
+            50% { stroke-dashoffset: -100; } 
+            65% { stroke-dashoffset: -110; } 
+            80% { stroke-dashoffset: -110; opacity: 1; }
+            100% { stroke-dashoffset: -110; opacity: 0; }
+        }
+        @keyframes signal-pass-v2 {
+            0% { stroke-dashoffset: 20; opacity: 1; }
+            100% { stroke-dashoffset: -400; opacity: 1; }
+        }
+        #svg-ting .sound-signal { animation: signal-poke-v2 1.5s cubic-bezier(0.25, 1, 0.5, 1) infinite; }
+        #svg-ting.broken .ear-part { opacity: 0; }
+        #svg-ting.broken .sound-signal { opacity: 1; animation: signal-pass-v2 1.0s linear infinite !important; }
         
-        #svg-yun .wheel { transform-origin: center; transition: transform 0.8s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
-        #svg-yun .cart-body { transition: transform 0.6s ease-in; }
-        #svg-yun .cargo-box { fill: #000; stroke: none; transition: transform 0.5s ease; }
-        #svg-yun.broken .wheel.left { transform: translateX(-50px) rotate(-180deg); opacity: 0; }
-        #svg-yun.broken .wheel.right { transform: translateX(50px) rotate(180deg); opacity: 0; }
-        #svg-yun.broken .cart-body { transform: translateY(20px) rotate(-5deg); }
-        #svg-yun.broken .cargo-box { transform: translateY(25px) rotate(10deg); }
+        /* 6. 옮길 운(運) */
+        #svg-yun path, #svg-yun rect, #svg-yun circle, #svg-yun line {
+            stroke: #000; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; fill: none;
+            vector-effect: non-scaling-stroke;
+        }
+        #svg-yun .cargo-box { fill: #000; stroke: none; transform-origin: center; transition: transform 0.5s; }
+        @keyframes spin-tire { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #svg-yun .tire-spin { transform-origin: 0 0; animation: spin-tire 1.5s linear infinite; }
+        @keyframes roll-stop-left {
+            0% { transform: translate(35px, 75px); }
+            100% { transform: translate(-40px, 85px); opacity: 1; } 
+        }
+        @keyframes roll-stop-right {
+            0% { transform: translate(65px, 75px); }
+            100% { transform: translate(140px, 85px); opacity: 1; }
+        }
+        @keyframes spin-down-left { 0% { transform: rotate(0deg); } 100% { transform: rotate(-720deg); } }
+        @keyframes spin-down-right { 0% { transform: rotate(0deg); } 100% { transform: rotate(720deg); } }
+        @keyframes body-collapse {
+            0% { transform: translateY(0) rotate(0); }
+            30% { transform: translateY(5px) rotate(-2deg); }
+            100% { transform: translateY(18px) rotate(-12deg); }
+        }
+        @keyframes cargo-spill {
+            0% { transform: translate(0, 0) rotate(0); }
+            30% { transform: translate(0, 5px) rotate(-2deg); }
+            100% { transform: translate(-25px, 35px) rotate(-45deg); opacity: 1; } 
+        }
+        #svg-yun.broken .wheel.left { animation: roll-stop-left 2s ease-out forwards; }
+        #svg-yun.broken .wheel.left .tire-spin { animation: spin-down-left 2s ease-out forwards; }
+        #svg-yun.broken .wheel.right { animation: roll-stop-right 2s ease-out forwards; }
+        #svg-yun.broken .wheel.right .tire-spin { animation: spin-down-right 2s ease-out forwards; }
+        #svg-yun .cart-body { transform-origin: 50px 70px; transition: transform 0.5s; }
+        #svg-yun.broken .cart-body { animation: body-collapse 0.6s cubic-bezier(0.5, 0, 0.5, 1) forwards; }
+        #svg-yun.broken .cargo-box { animation: cargo-spill 0.7s cubic-bezier(0.2, 0.6, 0.3, 1) forwards; }
         
-        #svg-xuan .check-v { stroke-width: 3px; stroke: #000; transition: all 0.4s; transform-origin: center; }
-        #svg-xuan.broken .check-v { opacity: 0; transform: scale(2); }
+        /* 7. 가릴 선(選) */
+        #svg-xuan .clipboard rect, #svg-xuan .clipboard line, #svg-xuan .pencil {
+            stroke: #000; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; fill: none;
+        }
+        @keyframes try-check-move {
+            0% { transform: translate(0, 0); }
+            40% { transform: translate(-15px, -10px); }
+            50% { transform: translate(-15px, -10px); }
+            100% { transform: translate(0, 0); }
+        }
+        @keyframes tremble-fear {
+            0% { transform: translate(-15px, -10px) rotate(0deg); }
+            25% { transform: translate(-16px, -11px) rotate(-2deg); }
+            50% { transform: translate(-14px, -9px) rotate(2deg); }
+            75% { transform: translate(-16px, -9px) rotate(-2deg); }
+            100% { transform: translate(-15px, -10px) rotate(0deg); }
+        }
+        #svg-xuan .pencil-wrapper { transition: transform 0.5s ease; animation: try-check-move 2s ease-in-out infinite; }
+        #svg-xuan.broken .pencil-wrapper { animation: tremble-fear 0.1s linear infinite !important; opacity: 1; }
+        #svg-xuan.broken .clipboard { opacity: 1; }
         
-        #svg-jin .arrow-head-piece { fill: #000; stroke: none; transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #svg-jin.broken .arrow-head-piece { transform: translateX(60px) rotate(45deg); opacity: 0; }
-        #svg-jin.broken .arrow-shaft { stroke-dasharray: 2, 2; opacity: 0.5; }
+        /* 8. 나아갈 진(進) */
+        #svg-jin .arrow-shaft, #svg-jin path {
+            stroke: #000; stroke-width: 3px; stroke-linecap: round; stroke-linejoin: round; transition: opacity 0.3s;
+        }
+        #svg-jin .arrow-head-piece { 
+            fill: #000; stroke: none; transform-origin: center;
+            transition: transform 1.0s cubic-bezier(0.6, -0.28, 0.735, 0.045), opacity 1.0s;
+        }
+        #svg-jin.broken .arrow-shaft, #svg-jin.broken path:nth-last-child(1) { opacity: 0; }
+        #svg-jin.broken .arrow-head-piece { transform: translate(60px, 150px) rotate(90deg); }
         
-        #svg-er .skull-top { transition: transform 0.6s, opacity 0.6s; transform-origin: bottom center; }
-        #svg-er .face-sad { opacity: 0; transition: opacity 0.5s; }
-        #svg-er.broken .skull-top { transform: translateY(-30px) rotate(-15deg); opacity: 0; }
-        #svg-er.broken .face-sad { opacity: 1; }
-        
-        #svg-ai .heart-piece { fill: #000; stroke: none; transition: transform 0.6s cubic-bezier(0.1, 1.2, 0.3, 1); }
-        #svg-ai.broken .left-half { transform: translate(-20px, 10px) rotate(-15deg); }
-        #svg-ai.broken .right-half { transform: translate(20px, 10px) rotate(15deg); }
-        
-        #svg-yun2 .rain-drops line { stroke: #000; stroke-width: 1; transition: transform 0.6s ease-in, opacity 0.4s; }
-        #svg-yun2 .drought-cracks { opacity: 0; transform-origin: bottom center; transform: scaleY(0); transition: opacity 0.5s, transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        #svg-yun2.broken .rain-drops line { transform: translateY(30px); opacity: 0; }
-        #svg-yun2.broken .drought-cracks { opacity: 1; transform: scaleY(1); }
-
+        /* 9. 사랑 애(愛) - 하트 분리 */
+        #svg-ai {
+            transform: scale(0.7); transform-origin: center; overflow: visible; 
+            outline: none !important; border: none !important;
+        }
+        #svg-ai .heart-part {
+            fill: #000 !important; stroke: none !important; transform-origin: center;
+            transition: transform 1.2s cubic-bezier(0.1, 0.7, 1.0, 0.1), opacity 1.2s ease;
+        }
+        #svg-ai.broken .heart-left { transform: translate(-60px, 40px) rotate(-25deg); opacity: 0; }
+        #svg-ai.broken .heart-right { transform: translate(60px, -40px) rotate(25deg); opacity: 0; }
 
         /* --- [오른쪽 패널] --- */
         .right-panel {
@@ -198,29 +325,91 @@
 
         <div class="center-column">
             
-            <!-- [1] 화면 영역 (맨 위) -->
             <div class="screen-area">
-                <svg id="svg-qin" class="obj-svg" viewBox="0 0 100 100"><path class="eye-lid" d="M10 50 Q50 10 90 50 Q50 90 10 50 Z" /><circle cx="50" cy="50" r="18" /><circle class="pupil" cx="50" cy="50" r="8" /></svg>
-                <svg id="svg-dao" class="obj-svg" viewBox="0 0 100 100"><path d="M20 90 Q40 50 45 20" /><path d="M80 90 Q60 50 55 20" /><path class="path-dashed" d="M50 90 Q50 50 50 20" /><circle class="destination" cx="50" cy="15" r="5" fill="#000"/></svg>
-                <svg id="svg-chang" class="obj-svg" viewBox="0 0 100 100"><path class="factory-roof" d="M10 70 L10 40 L30 30 L30 40 L50 30 L50 40 L70 30 L70 70 Z" /><g class="gear" style="transform-box: fill-box;"><circle cx="40" cy="55" r="8" /><path d="M40 45 L40 65 M30 55 L50 55 M33 48 L47 62 M47 48 L33 62" /></g></svg>
+                <svg id="svg-qin" class="obj-svg" viewBox="0 0 100 100">
+                    <path class="eye-lid" d="M10 50 Q50 10 90 50 Q50 90 10 50 Z" />
+                    <image class="pupil-hand"
+                           href="https://raw.githubusercontent.com/youngwookim11/svg-storage/443096b94239a231313b3def25ddda246fd4602c/%E1%84%89%E1%85%A9%E1%86%AB%E1%84%87%E1%85%A1%E1%84%83%E1%85%A1%E1%86%A8.png"
+                           x="36" y="34" width="28" height="28" />
+                </svg>
+                
+                <svg id="svg-dao" class="obj-svg" viewBox="0 0 100 100">
+                    <path d="M20 90 Q40 50 45 20" /><path d="M80 90 Q60 50 55 20" />
+                    <path class="path-dashed" d="M50 90 Q50 50 50 20" />
+                    <circle class="destination" cx="50" cy="15" r="5" fill="#000"/>
+                </svg>
+                
+                <svg id="svg-chang" class="obj-svg" viewBox="0 0 100 100">
+                    <path class="factory-roof" d="M10 70 L10 40 L30 30 L30 40 L50 30 L50 40 L70 30 L70 70 Z" />
+                    <g class="gear" style="transform-box: fill-box;">
+                        <circle cx="40" cy="55" r="8" />
+                        <path d="M40 45 L40 65 M30 55 L50 55 M33 48 L47 62 M47 48 L33 62" />
+                    </g>
+                </svg>
                 
                 <svg id="svg-fei" class="obj-svg" viewBox="0 0 100 100">
                     <path class="wing wing-left" d="M50 85 Q 45 80, 40 70 Q 20 60, 5 30 Q 10 20, 25 15 Q 40 10, 50 20 Q 45 30, 40 40 Q 30 40, 20 30 Q 25 45, 35 50 Q 30 60, 25 55 Q 35 70, 45 65 Q 48 75, 50 85 Z" />
                     <path class="wing wing-right" d="M50 85 Q 55 80, 60 70 Q 80 60, 95 30 Q 90 20, 75 15 Q 60 10, 50 20 Q 55 30, 60 40 Q 70 40, 80 30 Q 75 45, 65 50 Q 70 60, 75 55 Q 65 70, 55 65 Q 52 75, 50 85 Z" />
                 </svg>
 
-                <svg id="svg-ting" class="obj-svg" viewBox="0 0 100 100"><path d="M30 30 C 10 30, 10 80, 30 80 C 40 80, 45 70, 35 60" /><path d="M28 45 Q 35 50 28 65" /><g class="sound-lines"><path d="M50 55 Q60 55 50 65" /><path d="M60 45 Q80 55 60 75" /><path d="M70 35 Q100 55 70 85" /></g></svg>
-                <svg id="svg-yun" class="obj-svg" viewBox="0 0 100 100"><g class="cart-body"><path d="M20 70 L80 70 L80 60 L20 60 Z" /><path d="M25 60 L25 50" /></g><circle class="wheel left" cx="35" cy="75" r="8" /><circle class="wheel right" cx="65" cy="75" r="8" /><rect class="cargo-box" x="35" y="35" width="30" height="25" /></svg>
-                <svg id="svg-xuan" class="obj-svg" viewBox="0 0 100 100"><g class="clipboard"><rect x="25" y="20" width="50" height="60" rx="3" /><line x1="35" y1="35" x2="65" y2="35" /><line x1="35" y1="45" x2="65" y2="45" /><line x1="35" y1="55" x2="65" y2="55" /></g><polyline class="check-v" points="30 40 45 60 75 20" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                <svg id="svg-jin" class="obj-svg" viewBox="0 0 100 100"><line class="arrow-shaft" x1="10" y1="50" x2="70" y2="50" /><path class="arrow-head-piece" d="M65 35 L85 50 L65 65 L70 50 Z" /><path d="M10 50 L5 40 M10 50 L5 60" /></svg>
-                <svg id="svg-er" class="obj-svg" viewBox="0 0 100 100"><g class="body"><path d="M30 90 Q50 70 70 90" /><circle cx="50" cy="55" r="20" /></g><g class="face-sad"><circle cx="43" cy="50" r="2" fill="#000" stroke="none"/><circle cx="57" cy="50" r="2" fill="#000" stroke="none"/><path d="M45 60 Q50 58 55 60" /></g><path class="skull-top" d="M30 50 A 20 20 0 0 1 70 50" /></svg>
-                <svg id="svg-ai" class="obj-svg" viewBox="0 0 100 100"><g class="heart-piece left-half"><path d="M50 85 C 20 65 10 45 10 30 C 10 15 25 10 40 20 C 45 25 50 35 50 35 Z" fill="#000" stroke="none"/></g><g class="heart-piece right-half"><path d="M50 85 C 80 65 90 45 90 30 C 90 15 75 10 60 20 C 55 25 50 35 50 35 Z" fill="#000" stroke="none"/></g></svg>
-                <svg id="svg-yun2" class="obj-svg" viewBox="0 0 100 100"><path class="cloud-shape" d="M25 45 Q15 45 15 35 Q15 25 25 25 Q30 15 45 15 Q60 15 65 25 Q75 25 75 35 Q75 45 65 45 Z" /><g class="rain-drops"><line x1="25" y1="50" x2="20" y2="60" /><line x1="35" y1="55" x2="30" y2="65" /><line x1="45" y1="50" x2="40" y2="60" /><line x1="55" y1="55" x2="50" y2="65" /><line x1="65" y1="50" x2="60" y2="60" /><line x1="75" y1="55" x2="70" y2="65" /></g><line class="ground-flat" x1="10" y1="85" x2="90" y2="85" /><g class="drought-cracks"><path d="M10 85 L20 95 L30 85 L40 92 L50 85 L60 95 L70 85 L80 92 L90 85" fill="none" stroke="#000" stroke-width="1.5" /></g></svg>
+                <svg id="svg-ting" class="obj-svg" viewBox="0 0 100 100">
+                    <g class="ear-group" transform="translate(25, 12) scale(0.75)">
+                        <path class="ear-part" d="M9.53,84.37c4.24.21,3.44,4.42,4.09,7.2,3.26,13.96,24.78,12.89,26.04-2.6.79-9.79.92-15.66,6.81-24.06,6.48-9.25,17.33-14.47,18.89-26.63C68.36,14.75,46.82-3.99,23.92,2.97,12.92,6.32,4.15,16.23,2.07,27.53c-.41,2.23-.22,4.63-.57,6.64" />
+                        <path class="ear-part" d="M9.59,65.02c2.96-1.93,5.09.86,8.07,1.1,12.14.96,14.38-16.2,3.29-18.83-2.4-.57-4.99.39-6.67-1.67-.92-1.13-.94-2.53-1.01-3.93-.28-5.43-.6-10.59,1.41-15.73,6.56-16.83,29.72-19.24,39.63-4.11,2.21,3.37,4.37,9.45,3.55,13.47" />
+                    </g>
+                    <path class="sound-signal" d="M-50 65 L 150 65" />
+                </svg>
+                
+                <svg id="svg-yun" class="obj-svg" viewBox="0 0 100 100">
+                    <rect class="cargo-box" x="35" y="35" width="30" height="25" />
+                    <g class="cart-body">
+                        <path d="M20 70 L80 70 L80 60 L20 60 Z" />
+                        <path d="M25 60 L25 50" />
+                    </g>
+                    <g class="wheel left" transform="translate(35, 75)">
+                        <g class="tire-spin">
+                            <circle cx="0" cy="0" r="8" />
+                            <line x1="0" y1="-8" x2="0" y2="8" />
+                            <line x1="-8" y1="0" x2="8" y2="0" />
+                        </g>
+                    </g>
+                    <g class="wheel right" transform="translate(65, 75)">
+                        <g class="tire-spin">
+                            <circle cx="0" cy="0" r="8" />
+                            <line x1="0" y1="-8" x2="0" y2="8" />
+                            <line x1="-8" y1="0" x2="8" y2="0" />
+                        </g>
+                    </g>
+                </svg>
+                
+                <svg id="svg-xuan" class="obj-svg" viewBox="0 0 100 100">
+                    <g class="clipboard">
+                        <rect x="25" y="20" width="50" height="60" rx="3" />
+                        <line x1="35" y1="35" x2="65" y2="35" />
+                        <line x1="35" y1="45" x2="65" y2="45" />
+                        <line x1="35" y1="55" x2="65" y2="55" />
+                    </g>
+                    <g class="pencil-wrapper">
+                        <path class="pencil" d="M60 55 L 85 30 L 95 40 L 70 65 L 55 70 L 60 55 M 70 65 L 60 55" />
+                    </g>
+                </svg>
+                
+                <svg id="svg-jin" class="obj-svg" viewBox="0 0 100 100">
+                    <line class="arrow-shaft" x1="10" y1="50" x2="70" y2="50" />
+                    <path class="arrow-head-piece" d="M65 35 L85 50 L65 65 L70 50 Z" />
+                    <path d="M10 50 L5 40 M10 50 L5 60" />
+                </svg>
+                
+                <svg id="svg-ai" class="obj-svg" viewBox="0 0 122.54 112.02">
+                    <path class="heart-part heart-left" 
+                          d="M68.34,60.17l-17.1-9.4,14.53-22.65-10.26-8.98,4.65-9.68C46.08-3.49,24.17-3.14,10.51,10.51h0c-14.02,14.02-14.02,36.74,0,50.76h0l50.33,50.33-6.18-36.47,13.68-14.96Z"/>
+                    <path class="heart-part heart-right" 
+                          d="M112.02,61.27c14.02-14.02,14.02-36.74,0-50.76h0c-14.02-14.02-36.74-14.02-50.76,0h0c-.36-.36-.73-.71-1.11-1.05l-4.65,9.68,10.26,8.98-14.53,22.65,17.1,9.4-13.68,14.96,6.18,36.47.43.43,50.76-50.76Z"/>
+                </svg>
             </div>
 
-            <!-- [2] 메뉴바 (화면 아래, 자막 위) -->
             <div class="top-menu" id="menu-container">
-                <div class="menu-item" data-target="svg-qin" data-missing="見" data-msg="볼 견(見)이 없는데, 어찌 서로 친(親)할 수 있는가?">
+                <div class="menu-item" data-target="svg-qin" data-missing="見" data-msg="볼 수(見) 없는데, 어찌 서로 친(親)할 수 있는가?">
                     <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">亲</div><div class="ticker-char old">親</div></div></div>
                 </div>
                 <div class="menu-item" data-target="svg-dao" data-missing="道" data-msg="길(道)이 없는데, 어찌 인도(導)할 수 있는가?">
@@ -244,18 +433,11 @@
                 <div class="menu-item" data-target="svg-jin" data-missing="隹" data-msg="나아감(隹)이 없는데, 어찌 전진(進)할 수 있는가?">
                     <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">进</div><div class="ticker-char old">進</div></div></div>
                 </div>
-                <div class="menu-item" data-target="svg-er" data-missing="臼" data-msg="머리(臼)가 없는데, 어찌 아이(兒)라 할 수 있는가?">
-                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">儿</div><div class="ticker-char old">兒</div></div></div>
-                </div>
                 <div class="menu-item" data-target="svg-ai" data-missing="心" data-msg="마음(心)이 없는데, 사랑(愛)을 할 수 있는가?">
                     <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">爱</div><div class="ticker-char old">愛</div></div></div>
                 </div>
-                <div class="menu-item" data-target="svg-yun2" data-missing="雨" data-msg="구름(雲)이 비(雨)를 내리지 않으면(云), 농사는 어떻게 짓나?">
-                    <div class="ticker-container"><div class="ticker-wrapper"><div class="ticker-char new">云</div><div class="ticker-char old">雲</div></div></div>
-                </div>
             </div>
 
-            <!-- [3] 하단 자막바 (맨 아래) -->
             <div class="bottom-bar" id="text-display"></div>
         </div>
 
